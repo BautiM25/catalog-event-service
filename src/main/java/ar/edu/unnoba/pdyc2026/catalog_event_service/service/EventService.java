@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ar.edu.unnoba.pdyc2026.catalog_event_service.dto.ArtistResponse;
 import ar.edu.unnoba.pdyc2026.catalog_event_service.dto.EventDetail;
+import ar.edu.unnoba.pdyc2026.catalog_event_service.dto.EventStatusChangedMessage;
 import ar.edu.unnoba.pdyc2026.catalog_event_service.dto.EventSummary;
 import ar.edu.unnoba.pdyc2026.catalog_event_service.model.Artist;
 import ar.edu.unnoba.pdyc2026.catalog_event_service.model.Event;
@@ -29,7 +30,7 @@ public class EventService {
     private ArtistRepository artistRepository;
 
     @Autowired
-    //private NotificationService notificationService;
+    private org.springframework.amqp.rabbit.core.RabbitTemplate rabbitTemplate;
 
     public List<Event> findAll(Optional<EventStatus> state) {
         return state.map(eventRepository::findByStatus)
@@ -125,8 +126,13 @@ public class EventService {
         event.setStatus(EventStatus.confirmed);
         Event savedEvent = eventRepository.save(event);
 
-        // Disparamos la generación asíncrona de notificaciones
-        // notificationService.createNotificationsForEventChange(savedEvent, previousState, EventStatus.confirmed);
+        List<Long> artistIds = savedEvent.getArtists().stream().map(Artist::getId).collect(Collectors.toList());
+        EventStatusChangedMessage message = new EventStatusChangedMessage(
+            savedEvent.getId(), savedEvent.getName(), artistIds, previousState, EventStatus.confirmed
+        );
+
+        // Enviamos el mensaje al Exchange de RabbitMQ
+        rabbitTemplate.convertAndSend("event.exchange", "event.status.changed", message);
     }
 
     @Transactional
@@ -148,8 +154,13 @@ public class EventService {
         event.setStatus(EventStatus.rescheduled);
         Event savedEvent = eventRepository.save(event);
 
-        // Disparamos la generación asíncrona de notificaciones
-        // notificationService.createNotificationsForEventChange(savedEvent, previousState, EventStatus.rescheduled);
+        List<Long> artistIds = savedEvent.getArtists().stream().map(Artist::getId).collect(Collectors.toList());
+        EventStatusChangedMessage message = new EventStatusChangedMessage(
+            savedEvent.getId(), savedEvent.getName(), artistIds, previousState, EventStatus.rescheduled
+        );
+
+        // Enviamos el mensaje al Exchange de RabbitMQ
+        rabbitTemplate.convertAndSend("event.exchange", "event.status.changed", message);
     }
 
     @Transactional
@@ -164,8 +175,13 @@ public class EventService {
         event.setStatus(EventStatus.cancelled);
         Event savedEvent = eventRepository.save(event);
 
-        // Disparamos la generación asíncrona de notificaciones
-        // notificationService.createNotificationsForEventChange(savedEvent, previousState, EventStatus.cancelled);
+        List<Long> artistIds = savedEvent.getArtists().stream().map(Artist::getId).collect(Collectors.toList());
+        EventStatusChangedMessage message = new EventStatusChangedMessage(
+            savedEvent.getId(), savedEvent.getName(), artistIds, previousState, EventStatus.cancelled
+        );
+
+        // Enviamos el mensaje al Exchange de RabbitMQ
+        rabbitTemplate.convertAndSend("event.exchange", "event.status.changed", message);
     }
 
     // Para: GET /events
