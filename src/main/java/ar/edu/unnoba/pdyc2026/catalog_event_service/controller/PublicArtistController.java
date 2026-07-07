@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ar.edu.unnoba.pdyc2026.catalog_event_service.dto.ArtistResponse;
 import ar.edu.unnoba.pdyc2026.catalog_event_service.dto.EventSummary;
+import ar.edu.unnoba.pdyc2026.catalog_event_service.model.Artist;
 import ar.edu.unnoba.pdyc2026.catalog_event_service.service.ArtistService;
 import ar.edu.unnoba.pdyc2026.catalog_event_service.service.EventService;
 
@@ -28,6 +29,14 @@ public class PublicArtistController {
     @GetMapping
     public ResponseEntity<List<ArtistResponse>> getActiveArtists() {
         return ResponseEntity.ok(artistService.findActiveArtists());
+    }
+
+    // GET /artists/{artistId}
+    @GetMapping("/{artistId}")
+    public ResponseEntity<ArtistResponse> getArtistById(@PathVariable Long artistId) {
+        Artist artist = artistService.findById(artistId)
+                .orElseThrow(() -> new RuntimeException("Artist not found"));
+        return ResponseEntity.ok(new ArtistResponse(artist.getId(), artist.getName(), artist.getGenre(), artist.isActive()));
     }
 
     // GET /artists/{artistId}/events

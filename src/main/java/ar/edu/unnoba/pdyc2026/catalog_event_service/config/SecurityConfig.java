@@ -35,6 +35,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // 1. Endpoints públicos exclusivos de este microservicio
                 .requestMatchers(HttpMethod.GET, "/artists").permitAll()
+                .requestMatchers(HttpMethod.GET, "/artists/*").permitAll()
                 .requestMatchers(HttpMethod.GET, "/artists/*/events").permitAll()
                 .requestMatchers(HttpMethod.GET, "/events").permitAll()
                 .requestMatchers(HttpMethod.GET, "/events/*").permitAll()
